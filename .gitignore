@@ -96,3 +96,4 @@ fabric.properties
 # .idea/misc.xml
 # *.ipr
 .idea/vcs.xml
+.idea/
