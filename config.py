@@ -5,7 +5,10 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'Allredballoonsmustfly!'
 
-    UPLOAD_FOLDER = os.path.join('/home/cyu/temp', 'images')
+    # UPLOAD_FOLDER = os.path.join('../temp', 'images')
+
+    # connect to another MongoDB database on the same host
+    MONGO_DBNAME = 'parks'
 
     @staticmethod
     def init_app(app):
