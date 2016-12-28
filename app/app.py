@@ -52,6 +52,10 @@ def upload_file():
         return 'file uploaded successfully'
 
 
+@main.route('/show', methods=['GET'])
+def show_image():
+    return mongo.send_file('sky.jpg')
+
 #a base urls that returns all the parks in the collection (of course in the future we would implement paging)
 @main.route("/ws/parks")
 def parks():
