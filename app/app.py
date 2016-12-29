@@ -1,11 +1,12 @@
+import base64
 import json
 import os
 from bson.json_util import dumps
 
 from flask import Blueprint
-from flask import current_app, flash, redirect, request, url_for, render_template
+from flask import current_app, abort, flash, redirect, request, url_for, render_template
 
-from flask_pymongo import GridFS
+from flask_pymongo import GridFS, NoFile
 from mimetypes import guess_type
 
 from werkzeug.utils import secure_filename
@@ -55,6 +56,33 @@ def upload_file():
 @main.route('/show', methods=['GET'])
 def show_image():
     return mongo.send_file('sky.jpg')
+
+
+@main.route('/signUp')
+def signUp():
+    return render_template('signUp.html')
+
+
+@main.route('/signUpUser', methods=['POST'])
+def signUpUser():
+    user =  request.form['username']
+    password = request.form['password']
+
+    ENCODING = 'utf-8'
+
+    storage = GridFS(mongo.db, 'fs')
+
+    try:
+        fileobj = storage.get_version(filename='sky.jpg', version=-1).read()
+    except NoFile:
+        abort(404)
+
+
+    base64_bytes = base64.b64encode(fileobj)
+    image_base64_string = base64_bytes.decode(ENCODING)
+
+    return json.dumps({'status':'OK','image':image_base64_string});
+
 
 #a base urls that returns all the parks in the collection (of course in the future we would implement paging)
 @main.route("/ws/parks")
