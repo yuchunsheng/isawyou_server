@@ -1,0 +1,1 @@
+http://stackoverflow.com/questions/36443172/extracting-image-data-from-response-angular2
