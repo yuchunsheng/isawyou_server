@@ -1,6 +1,10 @@
 import base64
 import json
 import os
+
+import cv2
+import numpy as np
+
 from bson.json_util import dumps
 
 from flask import Blueprint
@@ -82,6 +86,32 @@ def signUpUser():
     image_base64_string = base64_bytes.decode(ENCODING)
 
     return json.dumps({'status':'OK','image':image_base64_string});
+
+@main.route('/imageEdge', methods=['GET'])
+def image_edge():
+
+    ENCODING = 'utf-8'
+
+    storage = GridFS(mongo.db, 'fs')
+
+    try:
+        fileobj = storage.get_version(filename='sky.jpg', version=-1).read()
+        file_bytes = np.asarray(bytearray(fileobj), dtype=np.uint8)
+        img = cv2.imdecode(file_bytes, 0)  # Here as well I get returned nothing
+
+        edges = cv2.Canny(img, 100, 200)
+
+    except NoFile:
+        abort(404)
+
+
+    base64_bytes = base64.b64encode(img)
+    image_base64_string = base64_bytes.decode(ENCODING)
+
+    result = "data:image/jpg;base64," + image_base64_string
+    return render_template('show_image.html', image = result)
+
+    # return json.dumps({'status':'OK','image':image_base64_string});
 
 
 #a base urls that returns all the parks in the collection (of course in the future we would implement paging)
