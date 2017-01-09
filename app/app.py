@@ -59,7 +59,7 @@ def upload_file():
 
 @main.route('/show', methods=['GET'])
 def show_image():
-    return mongo.send_file('sky.jpg')
+    return mongo.send_file('patriciamaly.jpg')
 
 
 @main.route('/signUp')
@@ -68,7 +68,8 @@ def signUp():
 
 
 @main.route('/signUpUser', methods=['POST'])
-def signUpUser():
+def sign_up_user():
+
     user =  request.form['username']
     password = request.form['password']
 
@@ -77,7 +78,7 @@ def signUpUser():
     storage = GridFS(mongo.db, 'fs')
 
     try:
-        fileobj = storage.get_version(filename='sky.jpg', version=-1).read()
+        fileobj = storage.get_version(filename='patriciamaly.jpg', version=-1).read()
     except NoFile:
         abort(404)
 
@@ -87,31 +88,52 @@ def signUpUser():
 
     return json.dumps({'status':'OK','image':image_base64_string});
 
+
 @main.route('/imageEdge', methods=['GET'])
 def image_edge():
 
     ENCODING = 'utf-8'
 
     storage = GridFS(mongo.db, 'fs')
+    print('image edge detection')
 
     try:
-        fileobj = storage.get_version(filename='sky.jpg', version=-1).read()
+        fileobj = storage.get_version(filename='patriciamaly.jpg', version=-1).read()
         file_bytes = np.asarray(bytearray(fileobj), dtype=np.uint8)
         img = cv2.imdecode(file_bytes, 0)  # Here as well I get returned nothing
 
         edges = cv2.Canny(img, 100, 200)
 
+        # encode to jpeg format
+        # encode param image quality 0 to 100. default:95
+        # if you want to shrink data size, choose low image quality.
+        encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
+        result, encimg = cv2.imencode('.jpg', edges, encode_param)
+        if False == result:
+            print('could not encode image!')
+            abort(404)
     except NoFile:
         abort(404)
 
 
-    base64_bytes = base64.b64encode(img)
+    base64_bytes = base64.b64encode(encimg)
     image_base64_string = base64_bytes.decode(ENCODING)
 
-    result = "data:image/jpg;base64," + image_base64_string
-    return render_template('show_image.html', image = result)
+    result = "data:image/jpeg;base64," + image_base64_string
 
+    return render_template('show_image.html', image = result)
     # return json.dumps({'status':'OK','image':image_base64_string});
+
+
+@main.route('/uploads/<path:filename>', methods=['POST'])
+def save_upload(filename):
+    mongo.save_file(filename, request.files['file'])
+    return redirect(url_for('get_upload', filename=filename))
+
+
+@main.route('/uploads/<path:filename>')
+def get_upload(filename):
+    return mongo.send_file(filename)
 
 
 #a base urls that returns all the parks in the collection (of course in the future we would implement paging)
