@@ -59,7 +59,7 @@ def upload_file():
 
 @main.route('/show', methods=['GET'])
 def show_image():
-    return mongo.send_file('patriciamaly.jpg')
+    return mongo.send_file('sky.jpg')
 
 
 @main.route('/signUp')
@@ -78,7 +78,7 @@ def sign_up_user():
     storage = GridFS(mongo.db, 'fs')
 
     try:
-        fileobj = storage.get_version(filename='patriciamaly.jpg', version=-1).read()
+        fileobj = storage.get_version(filename='sky.jpg', version=-1).read()
     except NoFile:
         abort(404)
 
@@ -98,7 +98,7 @@ def image_edge():
     print('image edge detection')
 
     try:
-        fileobj = storage.get_version(filename='patriciamaly.jpg', version=-1).read()
+        fileobj = storage.get_version(filename='sky.jpg', version=-1).read()
         file_bytes = np.asarray(bytearray(fileobj), dtype=np.uint8)
         img = cv2.imdecode(file_bytes, 0)  # Here as well I get returned nothing
 
