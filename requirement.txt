@@ -1,0 +1,2 @@
+flask-pymongo=0.4.1
+celery==4.0.2

@@ -3,11 +3,13 @@ import json
 import os
 
 import cv2
+import uuid
+
 import numpy as np
 
 from bson.json_util import dumps
 
-from flask import Blueprint
+from flask import Blueprint, jsonify
 from flask import current_app, abort, flash, redirect, request, url_for, render_template
 
 from flask_pymongo import GridFS, NoFile
@@ -15,8 +17,8 @@ from mimetypes import guess_type
 
 from werkzeug.utils import secure_filename
 
-
 from . import mongo
+from .celery_workers import long_task
 
 main = Blueprint('main', __name__)
 
@@ -125,13 +127,38 @@ def image_edge():
     # return json.dumps({'status':'OK','image':image_base64_string});
 
 
-@main.route('/uploads/<path:filename>', methods=['POST'])
-def save_upload(filename):
-    mongo.save_file(filename, request.files['file'])
-    return redirect(url_for('get_upload', filename=filename))
+@main.route('/uploads', methods=['POST'])
+def save_upload():
+    if request.method == 'POST':
+        # check if the post request has the file part
+        if 'file' not in request.files:
+            # flash('No file part')
+            return 'No file part'
+        file_obj = request.files['file']
+        file_id = save_file_mongodb(file_obj)
+        task = long_task.delay(file_id)
+        # return jsonify({}), 202, {'Location': url_for('taskstatus',
+        return task.id
 
 
-@main.route('/uploads/<path:filename>')
+def save_file_mongodb(file_obj):
+
+    if file_obj.filename == '':
+        return None
+
+    extension = os.path.splitext(file_obj.filename)[1]
+    f_name = str(uuid.uuid4()) + extension
+
+    if file_obj and allowed_file(file_obj.filename):
+        filename = secure_filename(f_name)
+        content_type, _ = guess_type(filename)
+        storage = GridFS(mongo.db)
+        file_id = storage.put(file_obj, filename=filename, content_type=content_type)
+
+        return file_id
+
+
+@main.route('/images/<path:filename>')
 def get_upload(filename):
     return mongo.send_file(filename)
 
