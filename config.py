@@ -9,6 +9,9 @@ class Config:
 
     # connect to another MongoDB database on the same host
     MONGO_DBNAME = 'parks'
+
+
+
     CELERY_CONFIG = {}
 
     @staticmethod

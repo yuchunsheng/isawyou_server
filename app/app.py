@@ -18,7 +18,7 @@ from mimetypes import guess_type
 from werkzeug.utils import secure_filename
 
 from . import mongo
-from .celery_workers import long_task
+from .celery_workers import long_task, detect_face_long_task
 
 main = Blueprint('main', __name__)
 
@@ -137,6 +137,20 @@ def save_upload():
         file_obj = request.files['file']
         file_id = save_file_mongodb(file_obj)
         task = long_task.delay(file_id)
+        # return jsonify({}), 202, {'Location': url_for('taskstatus',
+        return task.id
+
+
+@main.route('/faceDetect', methods=['POST'])
+def detect_face():
+    if request.method == 'POST':
+        # check if the post request has the file part
+        if 'file' not in request.files:
+            # flash('No file part')
+            return 'No file part'
+        file_obj = request.files['file']
+        file_id = save_file_mongodb(file_obj)
+        task = detect_face_long_task.delay(file_id)
         # return jsonify({}), 202, {'Location': url_for('taskstatus',
         return task.id
 

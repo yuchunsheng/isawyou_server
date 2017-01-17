@@ -1,13 +1,17 @@
 import random
 
+import dlib
+import io
 import numpy as np
 import cv2
+from PIL import Image
 
 import time
 
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, abort
+from flask_pymongo import GridFS, NoFile, ObjectId
 
-from . import celery
+from . import celery, mongo
 
 tasks_bp = Blueprint('tasks', __name__)
 
@@ -51,7 +55,7 @@ def long_task(self, file_id):
 
 
 @tasks_bp.route('/status/<task_id>')
-def taskstatus(task_id):
+def task_status(task_id):
     task = long_task.AsyncResult(task_id)
     if task.state == 'PENDING':
         # job did not start yet
@@ -79,3 +83,48 @@ def taskstatus(task_id):
             'status': str(task.info),  # this is the exception raised
         }
     return jsonify(response)
+
+@celery.task(bind=True)
+def detect_face_long_task(self, file_id, base='fs'):
+
+    """Background task that runs a long function with progress reports."""
+    message = ''
+    self.update_state(state='PROGRESS',
+                      meta={'current': 30,
+                            'total': 100,
+                            'status': 'Upload image'})
+    time.sleep(1)
+
+    fs = GridFS(mongo.db, base)
+    try:
+        with fs.get(ObjectId(file_id)) as fp_read:
+            fileobj = io.BytesIO(fp_read.read())
+            image = Image.open(fileobj)
+    except NoFile:
+        return {'current': 100, 'total': 100, 'status': 'No file!',
+                'result': 0}
+
+    time.sleep(1)
+    self.update_state(state='PROGRESS',
+                      meta={'current': 50,
+                            'total': 100,
+                            'status': 'Detect face'})
+
+    detector = dlib.get_frontal_face_detector()
+    dets = detector(image, 1)
+
+    for i, d in enumerate(dets):
+        message = ("Detection {}: Left: {} Top: {} Right: {} Bottom: {}".format(
+            i, d.left(), d.top(), d.right(), d.bottom()))
+
+
+    time.sleep(1)
+    self.update_state(state='PROGRESS',
+                      meta={'current': 100,
+                            'total': 100,
+                            'status': message})
+
+    time.sleep(1)
+
+    return {'current': 100, 'total': 100, 'status': 'Task completed!',
+            'result': 42}
