@@ -145,7 +145,7 @@ def detect_face_long_task_without_app(self, file_id, base='fs'):
                       meta={'current': 30,
                             'total': 100,
                             'status': 'Upload image'})
-    time.sleep(1)
+    time.sleep(5)
 
     # client = MongoClient('localhost:27017')
     # db = client.parks
@@ -163,14 +163,14 @@ def detect_face_long_task_without_app(self, file_id, base='fs'):
         return {'current': 100, 'total': 100, 'status': 'No file!',
                 'result': 0}
 
-    time.sleep(1)
+    time.sleep(5)
     self.update_state(state='PROGRESS',
                       meta={'current': 50,
                             'total': 100,
                             'status': 'Detect face'})
 
     detector = dlib.get_frontal_face_detector()
-    dets = detector(image, 1)
+    dets = detector(image, 5)
 
     for i, d in enumerate(dets):
         message = ("Detection {}: Left: {} Top: {} Right: {} Bottom: {}".format(
@@ -183,7 +183,37 @@ def detect_face_long_task_without_app(self, file_id, base='fs'):
                             'total': 100,
                             'status': message})
 
-    time.sleep(1)
+    time.sleep(5)
 
     return {'current': 100, 'total': 100, 'status': 'Task completed!',
             'result': 42}
+
+@tasks_bp.route('/mongo/<task_id>')
+def mongo_task_status(task_id):
+    task = long_task.AsyncResult(task_id)
+    if task.state == 'PENDING':
+        # job did not start yet
+        response = {
+            'state': task.state,
+            'current': 0,
+            'total': 1,
+            'status': 'Pending...'
+        }
+    elif task.state != 'FAILURE':
+        response = {
+            'state': task.state,
+            'current': task.info.get('current', 0),
+            'total': task.info.get('total', 1),
+            'status': task.info.get('status', '')
+        }
+        if 'result' in task.info:
+            response['result'] = task.info['result']
+    else:
+        # something went wrong in the background job
+        response = {
+            'state': task.state,
+            'current': 1,
+            'total': 1,
+            'status': str(task.info),  # this is the exception raised
+        }
+    return jsonify(response)
