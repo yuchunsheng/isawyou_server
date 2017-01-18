@@ -18,7 +18,7 @@ def create_app(config_name):
     app.config.from_object(config[config_name])
     config[config_name].init_app(app)
 
-    mongo.init_app(app, config_prefix='MONGO')
+    mongo.init_app(app)
 
     celery.conf.update(config[config_name].CELERY_CONFIG)
 

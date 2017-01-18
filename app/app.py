@@ -18,7 +18,7 @@ from mimetypes import guess_type
 from werkzeug.utils import secure_filename
 
 from . import mongo
-from .celery_workers import long_task, detect_face_long_task
+from .celery_workers import long_task, detect_face_long_task, detect_face_long_task_without_app
 
 main = Blueprint('main', __name__)
 
@@ -150,7 +150,15 @@ def detect_face():
             return 'No file part'
         file_obj = request.files['file']
         file_id = save_file_mongodb(file_obj)
-        task = detect_face_long_task.delay(file_id)
+
+        text_types = (str, bytes)
+
+
+        environ = {k: v for k, v in request.environ.items()
+                   if isinstance(v, text_types)}
+
+        # task = detect_face_long_task.delay(environ, file_id)
+        task = detect_face_long_task_without_app.delay(file_id)
         # return jsonify({}), 202, {'Location': url_for('taskstatus',
         return task.id
 

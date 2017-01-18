@@ -9,7 +9,8 @@ from PIL import Image
 import time
 
 from flask import Blueprint, jsonify, abort
-from flask_pymongo import GridFS, NoFile, ObjectId
+from flask_pymongo import GridFS, NoFile, ObjectId, MongoClient
+
 
 from . import celery, mongo
 
@@ -85,7 +86,7 @@ def task_status(task_id):
     return jsonify(response)
 
 @celery.task(bind=True)
-def detect_face_long_task(self, file_id, base='fs'):
+def detect_face_long_task(self, environ, file_id, base='fs'):
 
     """Background task that runs a long function with progress reports."""
     message = ''
@@ -95,7 +96,60 @@ def detect_face_long_task(self, file_id, base='fs'):
                             'status': 'Upload image'})
     time.sleep(1)
 
-    fs = GridFS(mongo.db, base)
+    from .wsgi_aux import app
+    with app.request_context(environ):
+
+        # mongo.init_app(app)
+        # mongo.init_app(app, config_prefix= 'MONGO')
+
+        fs = GridFS(mongo.db, base)
+        try:
+            with fs.get(ObjectId(file_id)) as fp_read:
+                fileobj = io.BytesIO(fp_read.read())
+                image = Image.open(fileobj)
+        except NoFile:
+            return {'current': 100, 'total': 100, 'status': 'No file!',
+                    'result': 0}
+
+        time.sleep(1)
+        self.update_state(state='PROGRESS',
+                          meta={'current': 50,
+                                'total': 100,
+                                'status': 'Detect face'})
+
+        detector = dlib.get_frontal_face_detector()
+        dets = detector(image, 1)
+
+        for i, d in enumerate(dets):
+            message = ("Detection {}: Left: {} Top: {} Right: {} Bottom: {}".format(
+                i, d.left(), d.top(), d.right(), d.bottom()))
+
+
+        time.sleep(1)
+        self.update_state(state='PROGRESS',
+                          meta={'current': 100,
+                                'total': 100,
+                                'status': message})
+
+        time.sleep(1)
+
+    return {'current': 100, 'total': 100, 'status': 'Task completed!',
+            'result': 42}
+
+@celery.task(bind=True)
+def detect_face_long_task_without_app(self, file_id, base='fs'):
+
+    """Background task that runs a long function with progress reports."""
+    message = ''
+    self.update_state(state='PROGRESS',
+                      meta={'current': 30,
+                            'total': 100,
+                            'status': 'Upload image'})
+    time.sleep(1)
+
+    client = MongoClient('localhost:27017')
+    db = client.parks
+    fs = GridFS(db, base)
     try:
         with fs.get(ObjectId(file_id)) as fp_read:
             fileobj = io.BytesIO(fp_read.read())
