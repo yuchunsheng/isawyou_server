@@ -158,7 +158,7 @@ def detect_face_long_task_without_app(self, file_id, base='fs'):
     try:
         with fs.get(ObjectId(file_id)) as fp_read:
             fileobj = io.BytesIO(fp_read.read())
-            image = Image.open(fileobj)
+            image = np.array(Image.open(fileobj))
     except NoFile:
         return {'current': 100, 'total': 100, 'status': 'No file!',
                 'result': 0}
