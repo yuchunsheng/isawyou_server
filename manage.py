@@ -18,7 +18,7 @@ class CeleryWorker(Command):
 
     def run(self, argv):
         ret = subprocess.call(
-            ['celery', 'worker', '-A', 'app.celery_workers'] + argv)
+            ['celery', 'worker', '-A', 'app.celery_workers', '--loglevel=INFO'] + argv)
         sys.exit(ret)
 
 manager.add_command("celery", CeleryWorker())

@@ -12,7 +12,7 @@ from flask import Blueprint, jsonify, abort
 from flask_pymongo import GridFS, NoFile, ObjectId, MongoClient
 
 
-from . import celery, mongo
+from . import celery, mongo, mongodb_helper
 
 tasks_bp = Blueprint('tasks', __name__)
 
@@ -147,9 +147,14 @@ def detect_face_long_task_without_app(self, file_id, base='fs'):
                             'status': 'Upload image'})
     time.sleep(1)
 
-    client = MongoClient('localhost:27017')
-    db = client.parks
-    fs = GridFS(db, base)
+    # client = MongoClient('localhost:27017')
+    # db = client.parks
+    # fs = GridFS(db, base)
+
+    from .wsgi_aux import app
+    mongodb_helper.init_app(app.config)
+
+    fs = GridFS(mongodb_helper.db, base)
     try:
         with fs.get(ObjectId(file_id)) as fp_read:
             fileobj = io.BytesIO(fp_read.read())
