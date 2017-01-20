@@ -1,12 +1,11 @@
 import os
 
 from celery import Celery
-from flask import Flask, request
+from flask import Flask
+from flask_pymongo import PyMongo
 
 from app.mongodb_helper import MongodbHelper
-from config import config, Config
-
-from flask_pymongo import PyMongo
+from config import config
 
 mongo = PyMongo()
 
@@ -33,6 +32,13 @@ def create_app(config_name):
 
     from .celery_workers import tasks_bp as celery_task_blueprint
     app.register_blueprint(celery_task_blueprint, url_prefix='/celery')
+
+    from .business_api_1_0 import facepp_business as facepp_business_blueprint
+    app.register_blueprint(facepp_business_blueprint, url_prefix='/business')
+
+    from .management_api_1_0 import facepp_manage as facepp_manage_blueprint
+    app.register_blueprint(facepp_manage_blueprint, url_prefix='/manage')
+
 
     return app
 
