@@ -2,10 +2,8 @@
 #-*- coding: utf-8 -*-
 
 
-# 您需要先注册一个App，并将得到的API key和API secret写在这里。
-# You need to register your App first, and enter you API key/secret.
-API_KEY = "<YOUR_API_KEY>"
-API_SECRET = "<YOUR_API_SECRETַ>"
+# 您需要先注册一个App，并将得到的API key和API secret写在这里apikey.cfg。
+# You need to register your App first, and enter you API key/secret in apikey.cfg
 
 # 网络图片的URL地址,调用demo前请填上内容
 # The url of network picture, please fill in the contents before calling demo

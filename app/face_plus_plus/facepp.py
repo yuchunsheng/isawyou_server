@@ -4,8 +4,6 @@
 example:
 api = API(key, secret)
 api.detect(img = File('/tmp/test.jpg'))"""
-import base64
-import codecs
 import uuid
 
 import io
@@ -20,11 +18,8 @@ import socket
 import urllib
 import json
 import os.path
-import itertools
-import email
 import mimetypes
 import time
-import tempfile
 from collections import Iterable
 import configparser
 
@@ -215,7 +210,7 @@ class _APIProxy(object):
 
         return kargs_new
 
-
+# https://pymotw.com/3/urllib.request/index.html
 class _MultiPartForm:
     """Accumulate the data to be used when posting a form."""
 
