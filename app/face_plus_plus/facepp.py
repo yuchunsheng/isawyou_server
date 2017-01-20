@@ -4,6 +4,11 @@
 example:
 api = API(key, secret)
 api.detect(img = File('/tmp/test.jpg'))"""
+import base64
+import codecs
+import uuid
+
+import io
 
 __all__ = ['File', 'APIError', 'API']
 
@@ -42,6 +47,7 @@ class File(object):
         else:
             with open(self.path, 'rb') as f:
                 self.content = f.read()
+
 
     def get_filename(self):
         return os.path.basename(self.path)
@@ -141,25 +147,27 @@ class _APIProxy(object):
         _setup_apiobj(self, api, path)
 
     def __call__(self, *args, **kargs):
+
         if len(args):
             raise TypeError('Only keyword arguments are allowed')
+
         form = _MultiPartForm()
         for (k, v) in kargs.items():
             if isinstance(v, File):
                 form.add_file(k, v.get_filename(), v.content)
 
         url = self._urlbase
-        print(url)
+
         for k, v in self._mkarg(kargs).items():
             form.add_field(k, v)
 
         # url = 'https://api-us.faceplusplus.com/facepp/v3/faceset/create'
-        request = urllib.request.Request(url)
+        body = bytes(form)
 
-        body = str(form)
+        request = urllib.request.Request(url, data=body)
+        print(body)
         request.add_header('Content-type', form.get_content_type())
         request.add_header('Content-length', str(len(body)))
-        request.data = body.encode()
 
         self._api.update_request(request)
 
@@ -181,7 +189,7 @@ class _APIProxy(object):
 
         if self._api.decode_result:
             try:
-                ret = json.loads(ret)
+                ret = json.loads(ret.decode('utf-8'))
             except:
                 raise APIError(-1, url, 'json decode error, value={0!r}'.format(ret))
         return ret
@@ -194,81 +202,92 @@ class _APIProxy(object):
             #     return x.encode('utf-8')
             return str(x)
 
-        kargs = kargs.copy()
-        kargs['api_key'] = self._api.key
-        kargs['api_secret'] = self._api.secret
+        kargs_1 = kargs.copy()
+        kargs_1['api_key'] = self._api.key
+        kargs_1['api_secret'] = self._api.secret
         for (k, v) in kargs.items():
-            # if isinstance(v, Iterable) and not isinstance(v, basestring):
-            if isinstance(v, Iterable):
-                kargs[k] = ','.join([enc(i) for i in v])
+            if isinstance(v, Iterable) and not isinstance(v, str):
+                kargs_1[k] = ','.join([enc(i) for i in v])
             elif isinstance(v, File) or v is None:
-                del kargs[k]
+                del kargs_1[k]
             else:
-                kargs[k] = enc(v)
+                kargs_1[k] = enc(v)
 
-        return kargs
+        return kargs_1
 
 
-# ref: http://www.doughellmann.com/PyMOTW/urllib2/
-class _MultiPartForm(object):
-
+class _MultiPartForm:
     """Accumulate the data to be used when posting a form."""
 
     def __init__(self):
         self.form_fields = []
         self.files = []
-        self.boundary = '--FORM-BOUNDARYxxxxxxxxxxxxxxxxxxxxxxxx'  #email.set_boundary()
+        # Use a large random byte string to separate
+        # parts of the MIME data.
+        self.boundary = uuid.uuid4().hex.encode('utf-8')
         return
 
     def get_content_type(self):
-        return 'multipart/form-data; boundary=%s' % self.boundary
+        return 'multipart/form-data; boundary={}'.format(
+            self.boundary.decode('utf-8'))
 
     def add_field(self, name, value):
         """Add a simple field to the form data."""
         self.form_fields.append((name, value))
-        return
 
-    def add_file(self, fieldname, filename, content, mimetype=None):
+    def add_file(self, fieldname, filename, content,
+                 mimetype=None):
         """Add a file to be uploaded."""
+        body = content
         if mimetype is None:
-            mimetype = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
-        self.files.append((fieldname, filename, mimetype, content))
+            mimetype = (
+                mimetypes.guess_type(filename)[0] or
+                'application/octet-stream'
+            )
+        self.files.append((fieldname, filename, mimetype, body))
         return
 
-    def __str__(self):
-        """Return a string representing the form data, including attached files."""
-        # Build a list of lists, each containing "lines" of the
-        # request.  Each part is separated by a boundary string.
-        # Once the list is built, return a string where each
-        # line is separated by '\r\n'.
-        parts = []
-        part_boundary = '--' + self.boundary
+    @staticmethod
+    def _form_data(name):
+        return ('Content-Disposition: form-data; '
+                'name="{}"\r\n').format(name).encode('utf-8')
+
+    @staticmethod
+    def _attached_file(name, filename):
+        return ('Content-Disposition: file; '
+                'name="{}"; filename="{}"\r\n').format(
+                    name, filename).encode('utf-8')
+
+    @staticmethod
+    def _content_type(ct):
+        return 'Content-Type: {}\r\n'.format(ct).encode('utf-8')
+
+    def __bytes__(self):
+        """Return a byte-string representing the form data,
+        including attached files.
+        """
+        buffer = io.BytesIO()
+        boundary = b'--' + self.boundary + b'\r\n'
 
         # Add the form fields
-        parts.extend(
-            [part_boundary,
-             'Content-Disposition: form-data; name="%s"' % name,'',value, ]
-            for name, value in self.form_fields
-        )
+        for name, value in self.form_fields:
+            buffer.write(boundary)
+            buffer.write(self._form_data(name))
+            buffer.write(b'\r\n')
+            buffer.write(value.encode('utf-8'))
+            buffer.write(b'\r\n')
 
         # Add the files to upload
-        parts.extend(
-            [part_boundary,
-             'Content-Disposition: file; name="%s"; filename="%s"' %
-             (field_name, filename),
-             'Content-Type: %s' % content_type,
-             '',
-             body,
-             ]
-            for field_name, filename, content_type, body in self.files
-        )
+        for f_name, filename, f_content_type, body in self.files:
+            buffer.write(boundary)
+            buffer.write(self._attached_file(f_name, filename))
+            buffer.write(self._content_type(f_content_type))
+            buffer.write(b'\r\n')
+            buffer.write(body)
+            buffer.write(b'\r\n')
 
-        # Flatten the list and add closing boundary marker,
-        # then return CR+LF separated data
-        flattened = list(itertools.chain(*parts))
-        flattened.append('--' + self.boundary + '--')
-        flattened.append('')
-        return '\r\n'.join(flattened)
+        buffer.write(b'--' + self.boundary + b'--\r\n')
+        return buffer.getvalue()
 
 
 def _print_debug(msg):

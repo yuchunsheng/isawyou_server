@@ -44,43 +44,40 @@ from app.face_plus_plus.facepp import API, File
 
 api = API()
 
-# 创建一个Faceset用来存储FaceToken
-# create a Faceset to save FaceToken
-ret = api.faceset.create(outer_id='test')
-print_result("faceset create", ret)
-
-# 对图片进行检测
-# detect image
-Face = {}
-res = api.detect(image_url=face_one)
-print_result("person_one", res)
-Face['person_one'] = res["faces"][0]["face_token"]
-
-print('person one is done')
-res = api.detect(image_file=File(face_two))
-print_result("person_two", res)
-Face['person_two'] = res["faces"][0]["face_token"]
-
-print('person two is done')
-
-# 将得到的FaceToken存进Faceset里面
-# save FaceToken in Faceset
-api.faceset.addface(outer_id='test', face_tokens=Face.values())
-
-# 对待比对的图片进行检测，再搜索相似脸
-# detect image and search same face
-ret = api.detect(image_file=File(face_search))
-print_result("detect", ret)
-search_result = api.search(face_token=ret["faces"][0]["face_token"], outer_id='test')
-
-# 输出结果
-# print result
-print_result('search', search_result)
-print('=' * 60)
-for k, v in Face.items():
-    if v == search_result['results'][0]['face_token']:
-        print('The person with highest confidence:', k)
-        break
+# # 创建一个Faceset用来存储FaceToken
+# # create a Faceset to save FaceToken
+# ret = api.faceset.create(outer_id='test')
+# print_result("faceset create", ret)
+#
+# # 对图片进行检测
+# # detect image
+# Face = {}
+# res = api.detect(image_url=face_one)
+# print_result("person_one", res)
+# Face['person_one'] = res["faces"][0]["face_token"]
+#
+# res = api.detect(image_file=File(face_two))
+# print_result("person_two", res)
+# Face['person_two'] = res["faces"][0]["face_token"]
+#
+# # 将得到的FaceToken存进Faceset里面
+# # save FaceToken in Faceset
+# api.faceset.addface(outer_id='test', face_tokens=Face.itervalues())
+#
+# # 对待比对的图片进行检测，再搜索相似脸
+# # detect image and search same face
+# ret = api.detect(image_file=File(face_search))
+# print_result("detect", ret)
+# search_result = api.search(face_token=ret["faces"][0]["face_token"], outer_id='test')
+#
+# # 输出结果
+# # print result
+# print_result('search', search_result)
+# print('=' * 60)
+# for k, v in Face.items():
+#     if v == search_result['results'][0]['face_token']:
+#         print('The person with highest confidence:', k)
+#         break
 
 
 # 删除无用的人脸库

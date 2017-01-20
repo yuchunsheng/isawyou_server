@@ -84,18 +84,19 @@ class MultiPartForm:
 if __name__ == '__main__':
     # Create the form with simple fields
     form = MultiPartForm()
-    form.add_field('firstname', 'Doug')
-    form.add_field('lastname', 'Hellmann')
+    form.add_field('api_key', 'LM9EerMwm487h6j1Ybnmgu-VIlT-KJOj')
+    form.add_field('api_secret', '_cga2gleo-jZTo9-B4G5d626aQS7GmoV')
 
     # Add a fake file
     form.add_file(
-        'biography', 'bio.txt',
-        fileHandle=io.BytesIO(b'Python developer and blogger.'))
+        'image_file', 'test.jpg',
+        fileHandle= open("/mnt/hgfs/shared/test.jpg", "rb"))
+        # fileHandle=io.BytesIO(b'Python developer and blogger.'))
 
     # Build the request, including the byte-string
     # for the data to be posted.
     data = bytes(form)
-    r = request.Request('http://localhost:8080/', data=data)
+    r = request.Request('https://api-us.faceplusplus.com/facepp/v3/detect', data=data)
     r.add_header(
         'User-agent',
         'PyMOTW (https://pymotw.com/)',
@@ -108,7 +109,8 @@ if __name__ == '__main__':
     for name, value in r.header_items():
         print('{}: {}'.format(name, value))
     print()
-    print(r.data.decode('utf-8'))
+    # print(r.data.decode('utf-8'))
+    # print(r.data.decode())
 
     print()
     print('SERVER RESPONSE:')
