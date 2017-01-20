@@ -202,18 +202,18 @@ class _APIProxy(object):
             #     return x.encode('utf-8')
             return str(x)
 
-        kargs_1 = kargs.copy()
-        kargs_1['api_key'] = self._api.key
-        kargs_1['api_secret'] = self._api.secret
+        kargs_new = kargs.copy()
+        kargs_new['api_key'] = self._api.key
+        kargs_new['api_secret'] = self._api.secret
         for (k, v) in kargs.items():
             if isinstance(v, Iterable) and not isinstance(v, str):
-                kargs_1[k] = ','.join([enc(i) for i in v])
+                kargs_new[k] = ','.join([enc(i) for i in v])
             elif isinstance(v, File) or v is None:
-                del kargs_1[k]
+                del kargs_new[k]
             else:
-                kargs_1[k] = enc(v)
+                kargs_new[k] = enc(v)
 
-        return kargs_1
+        return kargs_new
 
 
 class _MultiPartForm:
