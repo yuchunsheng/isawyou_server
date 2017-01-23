@@ -1,38 +1,31 @@
 import base64
 import json
-import os
-
-import cv2
-import uuid
-
 import numpy as np
-
+import cv2
 from bson.json_util import dumps
+from mimetypes import guess_type
+
 
 from flask import Blueprint, jsonify
 from flask import current_app, abort, flash, redirect, request, url_for, render_template
-
 from flask_pymongo import GridFS, NoFile
-from mimetypes import guess_type
 
 from werkzeug.utils import secure_filename
 
+
+from .utils_mongodb import save_file_mongodb
+from .utils import allowed_file
 from . import mongo
 from .celery_workers import long_task, detect_face_long_task, detect_face_long_task_without_app
 
+
 main = Blueprint('main', __name__)
 
-ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
 
 @main.route('/')
 def home_page():
     return render_template('index.html')
     # return render_template('index.html')
-
-
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 @main.route('/uploader', methods=['GET', 'POST'])
@@ -43,20 +36,11 @@ def upload_file():
             flash('No file part')
             return redirect(url_for("/"))
 
-        file = request.files['file']
-
-        if file.filename == '':
-            flash('No selected file')
-            return redirect(request.url)
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            # file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
-            content_type, _ = guess_type(filename)
-            storage = GridFS(mongo.db, 'fs')
-            storage.put(file, filename=filename, content_type=content_type)
+        file_obj = request.files['file']
+        file_id = save_file_mongodb(file_obj)
 
         # return redirect(url_for('home_page', filename=filename))
-        return 'file uploaded successfully'
+        return file_id
 
 
 @main.route('/show', methods=['GET'])
@@ -163,21 +147,6 @@ def detect_face():
         return task.id
 
 
-def save_file_mongodb(file_obj):
-
-    if file_obj.filename == '':
-        return None
-
-    extension = os.path.splitext(file_obj.filename)[1]
-    f_name = str(uuid.uuid4()) + extension
-
-    if file_obj and allowed_file(file_obj.filename):
-        filename = secure_filename(f_name)
-        content_type, _ = guess_type(filename)
-        storage = GridFS(mongo.db)
-        file_id = storage.put(file_obj, filename=filename, content_type=content_type)
-
-        return file_id
 
 
 @main.route('/images/<path:filename>')

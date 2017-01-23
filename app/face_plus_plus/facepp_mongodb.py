@@ -60,6 +60,7 @@ class FileMongodb(object):
         self.content = file_obj.read()
 
     def get_filename(self):
+        print(self.name)
         return self.name
 
 
