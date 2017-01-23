@@ -33,6 +33,9 @@ def create_app(config_name):
     from .celery_workers import tasks_bp as celery_task_blueprint
     app.register_blueprint(celery_task_blueprint, url_prefix='/celery')
 
+    from .celery_workers_facepp import tasks_facepp as facepp_task_blueprint
+    app.register_blueprint(facepp_task_blueprint, url_prefix='/facepp')
+
     from .business_api_1_0 import facepp_business as facepp_business_blueprint
     app.register_blueprint(facepp_business_blueprint, url_prefix='/business')
 
