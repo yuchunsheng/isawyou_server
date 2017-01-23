@@ -11,6 +11,7 @@ import time
 from flask import Blueprint, jsonify, abort
 from flask_pymongo import GridFS, NoFile, ObjectId, MongoClient
 
+from app.utils import task_state
 from .face_plus_plus.facepp import API, File
 from . import celery, mongo, mongodb_helper
 
@@ -25,11 +26,8 @@ def facepp_detect(self, file_id, base='fs'):
                             'total': 100,
                             'status': 'Upload image'})
 
-    from .wsgi_aux import app
-    mongodb_helper.init_app(app.config)
-
-    fs = GridFS(mongodb_helper.db, base)
-    api = API()
+    api = get_api()
+    fs = get_mongodb_fs()
     try:
         with fs.get(ObjectId(file_id)) as fp_read:
 
@@ -43,11 +41,6 @@ def facepp_detect(self, file_id, base='fs'):
                       meta={'current': 50,
                             'total': 100,
                             'status': 'Detect face'})
-
-
-
-
-
 
     # res["faces"][0]["face_token"]
 
@@ -63,3 +56,21 @@ def facepp_detect(self, file_id, base='fs'):
 
     return {'current': 100, 'total': 100, 'status': 'Task completed!',
             'result': 42}
+
+
+def get_mongodb_fs(base='fs'):
+
+    from .wsgi_aux import app
+    mongodb_helper.init_app(app.config)
+    fs = GridFS(mongodb_helper.db, base)
+
+    return fs
+
+
+def get_api():
+    return API()
+
+@tasks_facepp.route('/facepp_detect/<task_id>')
+def mongo_facepp_task_status(task_id):
+    task = facepp_detect.AsyncResult(task_id)
+    return task_state(task)
