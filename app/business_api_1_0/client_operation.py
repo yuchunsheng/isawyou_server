@@ -9,7 +9,7 @@ from app import mongodb_helper
 from flask_pymongo import GridFS, NoFile, ObjectId, MongoClient
 
 from ..utils_mongodb import save_file_mongodb
-from ..face_plus_plus.facepp_mongodb import API, FileMongodb
+from ..face_plus_plus.facepp import API, FileMongodb
 
 from . import facepp_business
 from .. import celery, mongo, mongodb_helper
