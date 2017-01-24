@@ -12,7 +12,7 @@ from flask import Blueprint, jsonify, abort
 from flask_pymongo import GridFS, NoFile, ObjectId, MongoClient
 
 from app.utils import task_state
-from .face_plus_plus.facepp_mongodb import API, FileMongodb
+from .face_plus_plus.facepp import API, FileMongodb
 from . import celery, mongo, mongodb_helper
 
 tasks_facepp = Blueprint('facepp', __name__)

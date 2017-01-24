@@ -7,12 +7,6 @@ api.detect(img = File('/tmp/test.jpg'))"""
 import uuid
 
 import io
-
-__all__ = ['File', 'APIError', 'API']
-
-
-DEBUG_LEVEL = 1
-
 import sys
 import socket
 import urllib
@@ -22,6 +16,13 @@ import mimetypes
 import time
 from collections import Iterable
 import configparser
+
+
+__all__ = ['File', 'APIError', 'API']
+
+
+DEBUG_LEVEL = 1
+
 
 
 class File(object):
@@ -46,6 +47,21 @@ class File(object):
 
     def get_filename(self):
         return os.path.basename(self.path)
+
+
+class FileMongodb(object):
+
+    """an object representing a local file"""
+    path = None
+    content = None
+
+    def __init__(self, file_obj):
+        self.name = file_obj.name
+        self.content = file_obj.read()
+
+    def get_filename(self):
+        print(self.name)
+        return self.name
 
 
 class APIError(Exception):
@@ -91,15 +107,13 @@ class API(object):
         config = configparser.ConfigParser()
         mydir = os.path.dirname(os.path.abspath(__file__))
 
-        new_path = os.path.join(mydir, 'apikey.cfg')
+        new_path = os.path.join(mydir,  'apikey.cfg')
         print(new_path)
         config.read(new_path)
 
         self.key = config['DEFAULT']['API_KEY']
         self.secret = config['DEFAULT']['API_SECRET']
         self.server = config['DEFAULT']['SERVER']
-
-        print(self.key)
 
         # self.key = key
         # self.secret = secret
@@ -152,7 +166,7 @@ class _APIProxy(object):
 
         form = _MultiPartForm()
         for (k, v) in kargs.items():
-            if isinstance(v, File):
+            if (isinstance(v, FileMongodb) or isinstance(v, File) ):
                 form.add_file(k, v.get_filename(), v.content)
 
         url = self._urlbase
@@ -189,6 +203,7 @@ class _APIProxy(object):
         if self._api.decode_result:
             try:
                 ret = json.loads(ret.decode('utf-8'))
+                print('return json object')
             except:
                 raise APIError(-1, url, 'json decode error, value={0!r}'.format(ret))
         return ret
