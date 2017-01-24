@@ -12,7 +12,7 @@ from flask import Blueprint, jsonify, abort
 from flask_pymongo import GridFS, NoFile, ObjectId, MongoClient
 
 from app.utils import task_state
-from .face_plus_plus.facepp import API, File
+from .face_plus_plus.facepp_mongodb import API, FileMongodb
 from . import celery, mongo, mongodb_helper
 
 tasks_facepp = Blueprint('facepp', __name__)
@@ -31,7 +31,7 @@ def facepp_detect(self, file_id, base='fs'):
     try:
         with fs.get(ObjectId(file_id)) as fp_read:
 
-            res = api.detect(image_file=File(fp_read))
+            res = api.detect(image_file=FileMongodb(fp_read))
 
     except NoFile:
         return {'current': 100, 'total': 100, 'status': 'No file!',
@@ -44,7 +44,7 @@ def facepp_detect(self, file_id, base='fs'):
 
     # res["faces"][0]["face_token"]
 
-    message = res
+    # message = res
 
     time.sleep(1)
     self.update_state(state='PROGRESS',

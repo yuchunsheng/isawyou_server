@@ -89,7 +89,11 @@ class API(object):
         :param retry_delay: time to sleep before retrying"""
 
         config = configparser.ConfigParser()
-        config.read('apikey.cfg')
+        mydir = os.path.dirname(os.path.abspath(__file__))
+
+        new_path = os.path.join(mydir, 'apikey.cfg')
+        print(new_path)
+        config.read(new_path)
 
         self.key = config['DEFAULT']['API_KEY']
         self.secret = config['DEFAULT']['API_SECRET']

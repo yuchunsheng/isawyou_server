@@ -106,7 +106,9 @@ class API(object):
 
         config = configparser.ConfigParser()
         mydir = os.path.dirname(os.path.abspath(__file__))
+
         new_path = os.path.join(mydir,  'apikey.cfg')
+        print(new_path)
         config.read(new_path)
 
         self.key = config['DEFAULT']['API_KEY']
