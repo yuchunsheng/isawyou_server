@@ -147,6 +147,13 @@ def detect_face():
         return task.id
 
 
+@main.route('/long_task', methods=['GET'])
+def long_task_test():
+
+    task = long_task.delay()
+    # return jsonify({}), 202, {'Location': url_for('taskstatus',
+    return task.id
+
 
 
 @main.route('/images/<path:filename>')

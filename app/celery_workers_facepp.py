@@ -70,6 +70,7 @@ def get_mongodb_fs(base='fs'):
 def get_api():
     return API()
 
+
 @tasks_facepp.route('/facepp_detect/<task_id>')
 def mongo_facepp_task_status(task_id):
     task = facepp_detect.AsyncResult(task_id)

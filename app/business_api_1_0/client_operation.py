@@ -41,6 +41,7 @@ def detect_face():
         task = facepp_detect.delay(file_id)
         # return jsonify({}), 202, {'Location': url_for('taskstatus',
         return task.id
+        # return 'done'
 
     return render_template('facepp_test.html')
 

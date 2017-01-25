@@ -34,7 +34,7 @@ def detect(src_img,dest_img):
 
 
 @celery.task(bind=True)
-def long_task(self, file_id):
+def long_task(self):
 
     """Background task that runs a long function with progress reports."""
     verb = ['Starting up', 'Booting', 'Repairing', 'Loading', 'Checking']
@@ -165,7 +165,7 @@ def detect_face_long_task_without_app(self, file_id, base='fs'):
 
 @tasks_bp.route('/mongo/<task_id>')
 def mongo_task_status(task_id):
-    task = long_task.AsyncResult(task_id)
+    task = detect_face_long_task_without_app.AsyncResult(task_id)
     return task_state(task)
 
 
