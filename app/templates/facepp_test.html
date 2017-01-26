@@ -27,6 +27,14 @@
           </div>
         </div>
 
+      <hr>
+
+       <div class="progress">
+          <div id = "progressBarFace" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%;">
+            0%
+          </div>
+        </div>
+
     <hr>
 
     <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
@@ -56,13 +64,49 @@
                     data : formData,
                     processData: false,
                     contentType: false,
-                    success: function(){
+                    success: function(data, status, request){
                         console.log('File uploaded');
-                        alert('File uploaded');
+                        status_url = request.getResponseHeader('Location');
+                        console.log(status_url);
+                        update_progress(status_url);
+
+                        //alert('File uploaded');
                     }
                 })
             })
         })
+
+        function update_progress(status_url) {
+            // send GET request to status URL
+            $.getJSON(status_url, function(data) {
+                // update UI
+                percent = parseInt(data['current'] * 100 / data['total']);
+
+                $('#progressBarFace').attr('aria-valuenow', percent).css('width', percent + '%').text(percent + '%')
+
+                if (data['state'] != 'PENDING' && data['state'] != 'PROGRESS') {
+                    if ('result' in data) {
+                        // show result
+                        <!--$('#progressBarFace').attr('aria-valuenow', 100).css('width', 100 + '%').text('Done' + '%');-->
+
+                        console.log('Result: ' + data['result'])
+                        alert('Result: ' + data['result'])
+                    }
+                    else {
+                        // something unexpected happened
+                        <!--$('#progressBarFace').attr('aria-valuenow', percent).css('width', percent + '%').text('ERROR' + '%');;-->
+                        console.log('Result: ' + data['state']);
+                        alert('Result: ' + data['state']);
+                    }
+                }
+                else {
+                    // rerun in 2 seconds
+                    setTimeout(function() {
+                        update_progress(status_url);
+                    }, 2000);
+                }
+            });
+        }
     </script>
 
    </body>

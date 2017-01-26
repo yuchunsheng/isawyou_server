@@ -11,7 +11,6 @@ import time
 from flask import Blueprint, jsonify, abort
 from flask_pymongo import GridFS, NoFile, ObjectId, MongoClient
 
-from app.utils import task_state
 from .face_plus_plus.facepp import API, FileMongodb
 from . import celery, mongo, mongodb_helper
 
@@ -71,7 +70,3 @@ def get_api():
     return API()
 
 
-@tasks_facepp.route('/facepp_detect/<task_id>')
-def mongo_facepp_task_status(task_id):
-    task = facepp_detect.AsyncResult(task_id)
-    return task_state(task)

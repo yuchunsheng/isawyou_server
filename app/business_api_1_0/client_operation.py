@@ -2,12 +2,14 @@
 
 # https://console.faceplusplus.com/app/apikey/list
 # face_ai	key = LM9EerMwm487h6j1Ybnmgu-VIlT-KJOj	secret = _cga2gleo-jZTo9-B4G5d626aQS7GmoV
-from flask import render_template
+from flask import render_template, jsonify
 from flask import request
+from flask import url_for
 
 from app import mongodb_helper
 from flask_pymongo import GridFS, NoFile, ObjectId, MongoClient
 
+from app.utils import task_state
 from ..utils_mongodb import save_file_mongodb
 from ..face_plus_plus.facepp import API, FileMongodb
 
@@ -39,11 +41,16 @@ def detect_face():
         file_obj = request.files['file']
         file_id = save_file_mongodb(file_obj)
         task = facepp_detect.delay(file_id)
-        # return jsonify({}), 202, {'Location': url_for('taskstatus',
-        return task.id
-        # return 'done'
+
+        return jsonify({}), 202, {'Location': url_for('facepp_business.mongo_facepp_task_status', task_id=task.id)}
 
     return render_template('facepp_test.html')
+
+
+@facepp_business.route('/facepp_detect/<task_id>')
+def mongo_facepp_task_status(task_id):
+    task = facepp_detect.AsyncResult(task_id)
+    return task_state(task)
 
 
 @facepp_business.route('/faceset_add_face', methods=['POST'])
