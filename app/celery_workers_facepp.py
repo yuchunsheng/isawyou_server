@@ -39,22 +39,13 @@ def facepp_detect(self, file_id, base='fs'):
     self.update_state(state='PROGRESS',
                       meta={'current': 50,
                             'total': 100,
-                            'status': 'Detect face'})
+                            'status': 'Done'})
 
     # res["faces"][0]["face_token"]
-
     # message = res
 
-    time.sleep(1)
-    self.update_state(state='PROGRESS',
-                      meta={'current': 100,
-                            'total': 100,
-                            'status': message})
-
-    time.sleep(5)
-
     return {'current': 100, 'total': 100, 'status': 'Task completed!',
-            'result': 42}
+            'result': res}
 
 
 def get_mongodb_fs(base='fs'):
