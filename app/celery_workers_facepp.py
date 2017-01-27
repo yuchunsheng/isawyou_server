@@ -41,11 +41,34 @@ def facepp_detect(self, file_id, base='fs'):
                             'total': 100,
                             'status': 'Done'})
 
-    # res["faces"][0]["face_token"]
-    # message = res
-
     return {'current': 100, 'total': 100, 'status': 'Task completed!',
             'result': res}
+
+
+@celery.task(bind=True)
+def facepp_add_faceset(self, faceset_id, base='fs'):
+
+    self.update_state(state='PROGRESS',
+                      meta={'current': 30,
+                            'total': 100,
+                            'status': 'Upload image'})
+
+    api = get_api()
+    try:
+
+        ret = api.faceset.create(outer_id=faceset_id)
+
+    except NoFile:
+        return {'current': 100, 'total': 100, 'status': 'No file!',
+                'result': 0}
+
+    self.update_state(state='PROGRESS',
+                      meta={'current': 100,
+                            'total': 100,
+                            'status': 'Done'})
+
+    return {'current': 100, 'total': 100, 'status': 'Task completed!',
+            'result': ret}
 
 
 def get_mongodb_fs(base='fs'):

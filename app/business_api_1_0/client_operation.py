@@ -19,15 +19,6 @@ from .. import celery, mongo, mongodb_helper
 from ..celery_workers_facepp import  facepp_detect
 
 
-@facepp_business.route('/face_analyze', methods=['POST'])
-def create_faceset():
-
-    api = API()
-    # create a Faceset to save FaceToken
-    ret = api.faceset.create(outer_id='test')
-
-    return {'current': 100, 'total': 100, 'status': 'Task completed!',
-            'result': 42}
 
 
 @facepp_business.route('/face_detect', methods=['GET','POST'])
@@ -55,6 +46,16 @@ def mongo_facepp_task_status(task_id):
 
 @facepp_business.route('/faceset_add_face', methods=['POST'])
 def add_face():
+    api = API()
+    # create a Faceset to save FaceToken
+    ret = api.faceset.create(outer_id='test')
+
+    return {'current': 100, 'total': 100, 'status': 'Task completed!',
+            'result': 42}
+
+@facepp_business.route('/face_analyze', methods=['POST'])
+def create_faceset():
+
     api = API()
     # create a Faceset to save FaceToken
     ret = api.faceset.create(outer_id='test')
